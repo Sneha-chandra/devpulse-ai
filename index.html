@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevPulse AI — Sprint Intelligence Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;
+  --text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--green:#3fb950;
+  --yellow:#d29922;--red:#f85149;--purple:#bc8cff;--orange:#f0883e;
+  --radius:10px;
+}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;min-height:100vh}
+
+/* ── Header ── */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;position:sticky;top:0;z-index:100}
+.header-inner{max-width:1300px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.logo-sub{font-size:11px;color:var(--muted);font-weight:400}
+.header-right{display:flex;align-items:center;gap:12px}
+.badge{padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.badge-green{background:rgba(63,185,80,.15);color:var(--green);border:1px solid var(--green)}
+.badge-blue{background:rgba(88,166,255,.12);color:var(--accent);border:1px solid var(--accent)}
+.badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow);border:1px solid var(--yellow)}
+.badge-red{background:rgba(248,81,73,.15);color:var(--red);border:1px solid var(--red)}
+.badge-purple{background:rgba(188,140,255,.12);color:var(--purple);border:1px solid var(--purple)}
+.btn{background:var(--accent);border:none;border-radius:6px;color:#000;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-ghost{background:var(--bg3);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Tabs ── */
+.tabs{max-width:1300px;margin:0 auto;padding:20px 24px 0;display:flex;gap:4px;border-bottom:1px solid var(--border)}
+.tab{padding:8px 16px;border-radius:6px 6px 0 0;cursor:pointer;font-size:13px;color:var(--muted);border:1px solid transparent;border-bottom:none;transition:.2s;margin-bottom:-1px}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--bg2);border-color:var(--border);color:var(--accent);font-weight:600}
+.tab-icon{margin-right:6px}
+
+/* ── Main ── */
+main{max-width:1300px;margin:0 auto;padding:24px}
+.pane{display:none}.pane.active{display:block}
+
+/* ── KPI row ── */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:22px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.kpi-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.kpi-val{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.kpi-up{color:var(--green)}.kpi-down{color:var(--red)}.kpi-warn{color:var(--yellow)}
+
+/* ── Grid ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+
+/* ── Panel ── */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.panel-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border)}
+.panel-head h3{font-size:13px;color:var(--muted);font-weight:500}
+.panel-body{padding:18px}
+.chart-wrap{height:220px;padding:12px 16px 16px}
+
+/* ── Sprint bar ── */
+.sprint-info{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px;color:var(--muted)}
+.progress-track{background:var(--bg3);border-radius:4px;height:8px;overflow:hidden}
+.progress-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--accent),var(--purple));transition:width 1.2s ease}
+
+/* ── Blocker list ── */
+.blocker-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg3)}
+.blocker-item:last-child{border-bottom:none}
+.blocker-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.blocker-dot.red{background:var(--red)}.blocker-dot.yellow{background:var(--yellow)}.blocker-dot.green{background:var(--green)}
+.blocker-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.blocker-meta{font-size:11px;color:var(--muted)}
+
+/* ── Team ── */
+.member-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bg3)}
+.member-row:last-child{border-bottom:none}
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.member-info{flex:1}
+.member-name{font-size:13px;font-weight:600}
+.member-role{font-size:11px;color:var(--muted)}
+.member-stats{display:flex;gap:16px;font-size:11px}
+.ms-val{font-weight:700;color:var(--accent)}
+
+/* ── Standup ── */
+.standup-section{margin-bottom:22px}
+.standup-section h4{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:10px}
+.standup-block{background:var(--bg3);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:12px 14px;font-size:13px;line-height:1.7;position:relative}
+.standup-block.green{border-color:var(--green)}
+.standup-block.yellow{border-color:var(--yellow)}
+.standup-block.red{border-color:var(--red)}
+.standup-member{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px}
+
+/* ── Chat ── */
+.chat-window{height:340px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:80%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.6}
+.msg.user{align-self:flex-end;background:var(--accent);color:#000;border-radius:12px 12px 2px 12px}
+.msg.ai{align-self:flex-start;background:var(--bg3);border:1px solid var(--border);border-radius:12px 12px 12px 2px}
+.msg.ai .ai-label{font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px}
+.chat-input-row{display:flex;gap:10px;padding:12px 14px;border-top:1px solid var(--border)}
+.chat-input-row input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:8px 12px;font-size:13px;outline:none}
+.chat-input-row input:focus{border-color:var(--accent)}
+.chat-input-row input::placeholder{color:var(--muted)}
+.typing{display:flex;gap:4px;align-items:center;padding:4px 0}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bounce .9s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+
+/* ── Suggestion chips ── */
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px;border-top:1px solid var(--border)}
+.chip{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;cursor:pointer;transition:.2s;color:var(--muted)}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Generate btn animation ── */
+.generating{opacity:.7;pointer-events:none}
+.pulse-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite;margin-right:6px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── Counter animation ── */
+@keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.kpi-val{animation:countUp .5s ease forwards}
+
+/* ── Risk badge ── */
+.risk-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bg3);font-size:13px}
+.risk-row:last-child{border-bottom:none}
+.risk-bar-wrap{width:100px;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.risk-bar{height:100%;border-radius:3px}
+
+@media(max-width:800px){.grid-2,.grid-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div>DevPulse <span style="color:var(--accent)">AI</span></div>
+        <div class="logo-sub">Sprint Intelligence Platform</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="badge badge-green">● Live</span>
+      <span class="badge badge-blue">Sprint 14</span>
+      <span style="font-size:12px;color:var(--muted)">Team Nexus</span>
+      <button class="btn btn-ghost" onclick="generateStandup()">⚡ AI Standup</button>
+      <button class="btn">+ New Sprint</button>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')"><span class="tab-icon">📊</span>Overview</div>
+  <div class="tab" onclick="switchTab('standup')"><span class="tab-icon">🤖</span>AI Standup</div>
+  <div class="tab" onclick="switchTab('team')"><span class="tab-icon">👥</span>Team</div>
+  <div class="tab" onclick="switchTab('risks')"><span class="tab-icon">⚠️</span>Risks & Blockers</div>
+  <div class="tab" onclick="switchTab('chat')"><span class="tab-icon">💬</span>Ask AI</div>
+</div>
+
+<main>
+
+<!-- ══ OVERVIEW ══ -->
+<div class="pane active" id="pane-overview">
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">Completion</div>
+      <div class="kpi-val kpi-up" id="kpi-completion">0%</div>
+      <div class="kpi-sub">↑ 12% vs last sprint</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Velocity</div>
+      <div class="kpi-val kpi-up" id="kpi-velocity">0</div>
+      <div class="kpi-sub">story points done</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Open PRs</div>
+      <div class="kpi-val kpi-warn" id="kpi-prs">0</div>
+      <div class="kpi-sub">3 need review</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Blockers</div>
+      <div class="kpi-val kpi-down" id="kpi-blockers">0</div>
+      <div class="kpi-sub">2 critical</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Days Left</div>
+      <div class="kpi-val" id="kpi-days">0</div>
+      <div class="kpi-sub">of 14-day sprint</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">AI Risk Score</div>
+      <div class="kpi-val kpi-warn" id="kpi-risk">0</div>
+      <div class="kpi-sub">Medium risk sprint</div>
+    </div>
+  </div>
+
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px">
+    <div class="sprint-info">
+      <span>Sprint 14 · Jun 23 – Jul 6, 2026</span>
+      <span>Day 9 of 14 &nbsp;·&nbsp; <strong style="color:var(--accent)">73 / 100</strong> points planned</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="sprint-bar" style="width:0%"></div></div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="panel">
+      <div class="panel-head"><h3>Burndown Chart</h3><span class="badge badge-blue">On Track</span></div>
+      <div class="chart-wrap"><canvas id="burndown-chart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Velocity — Last 6 Sprints</h3></div>
+      <div class="chart-wrap"><canvas id="velocity-chart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="panel">
+      <div class="panel-head"><h3>Active Blockers</h3><span class="badge badge-red">3 Open</span></div>
+      <div class="panel-body">
+        <div class="blocker-item">
+          <div class="blocker-dot red"></div>
+          <div><div class="blocker-title">API rate limit on payments service</div><div class="blocker-meta">Reported by Arjun · 2 days ago · Blocking 4 tasks</div></div>
+        </div>
+        <div class="blocker-item">
+          <div class="blocker-dot red"></div>
+          <div><div class="blocker-title">Staging DB migration pending DevOps approval</div><div class="blocker-meta">Reported by Priya · 1 day ago · Blocking 2 tasks</div></div>
+        </div>
+        <div class="blocker-item">
+          <div class="blocker-dot yellow"></div>
+          <div><div class="blocker-title">Design review delayed — waiting on UX team</div><div class="blocker-meta">Reported by Rahul · 3 hours ago · Low severity</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Contributor Split</h3></div>
+      <div class="chart-wrap" style="height:200px"><canvas id="contrib-chart"></canvas></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ STANDUP ══ -->
+<div class="pane" id="pane-standup">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 style="font-size:18px;margin-bottom:4px">AI Daily Standup</h2>
+      <div style="color:var(--muted);font-size:13px">Generated from commits, PRs & Jira tickets · July 1, 2026</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="copyStandup()">📋 Copy</button>
+      <button class="btn" id="gen-btn" onclick="generateStandup()">⚡ Regenerate</button>
+    </div>
+  </div>
+  <div id="standup-output">
+    <div style="text-align:center;padding:60px;color:var(--muted)">
+      <div style="font-size:40px;margin-bottom:12px">⚡</div>
+      <div style="font-size:15px;margin-bottom:8px">Click "AI Standup" to generate today's standup</div>
+      <div style="font-size:12px">Pulls from GitHub commits, open PRs, and blocked tickets</div>
+      <button class="btn" style="margin-top:20px" onclick="generateStandup()">Generate Standup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TEAM ══ -->
+<div class="pane" id="pane-team">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <h2 style="font-size:18px">Team Nexus — Sprint 14</h2>
+    <span class="badge badge-blue">5 Members</span>
+  </div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><h3>Member Contributions</h3></div>
+      <div class="panel-body" id="team-list"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Workload Distribution</h3></div>
+      <div class="chart-wrap" style="height:260px"><canvas id="workload-chart"></canvas></div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <div class="panel-head"><h3>AI Team Insights</h3><span class="badge badge-purple">AI Generated</span></div>
+    <div class="panel-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div style="background:var(--bg3);border-radius:8px;padding:14px">
+          <div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🏆 Top Performer</div>
+          <div style="font-weight:700;margin-bottom:4px">Priya Sharma</div>
+          <div style="font-size:12px;color:var(--muted)">23 story points completed, 0 blockers, 98% PR approval rate this sprint.</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:14px">
+          <div style="font-size:11px;color:var(--yellow);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">⚠️ Needs Support</div>
+          <div style="font-weight:700;margin-bottom:4px">Arjun Mehta</div>
+          <div style="font-size:12px;color:var(--muted)">Blocked for 2 days on payments API. Recommend pairing with backend lead.</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:14px">
+          <div style="font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📈 Improving</div>
+          <div style="font-weight:700;margin-bottom:4px">Vikram Das</div>
+          <div style="font-size:12px;color:var(--muted)">PR review time improved by 40% vs last sprint. Velocity trending up.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RISKS ══ -->
+<div class="pane" id="pane-risks">
+  <div style="margin-bottom:20px">
+    <h2 style="font-size:18px;margin-bottom:4px">Risk Intelligence</h2>
+    <div style="color:var(--muted);font-size:13px">AI-detected risks based on commit patterns, blocker duration, and velocity trends</div>
+  </div>
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="panel">
+      <div class="panel-head"><h3>Sprint Risk Score</h3><span class="badge badge-yellow">Medium — 62/100</span></div>
+      <div class="panel-body">
+        <div class="risk-row"><span>Scope creep probability</span><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--yellow)">64%</span><div class="risk-bar-wrap"><div class="risk-bar" style="width:64%;background:var(--yellow)"></div></div></div></div>
+        <div class="risk-row"><span>Delivery delay risk</span><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--orange)">48%</span><div class="risk-bar-wrap"><div class="risk-bar" style="width:48%;background:var(--orange)"></div></div></div></div>
+        <div class="risk-row"><span>Team burnout signal</span><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--green)">22%</span><div class="risk-bar-wrap"><div class="risk-bar" style="width:22%;background:var(--green)"></div></div></div></div>
+        <div class="risk-row"><span>Technical debt increase</span><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--red)">71%</span><div class="risk-bar-wrap"><div class="risk-bar" style="width:71%;background:var(--red)"></div></div></div></div>
+        <div class="risk-row"><span>Blocker resolution rate</span><div style="display:flex;align-items:center;gap:8px"><span style="color:var(--green)">85%</span><div class="risk-bar-wrap"><div class="risk-bar" style="width:85%;background:var(--green)"></div></div></div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Risk Trend — Last 6 Sprints</h3></div>
+      <div class="chart-wrap"><canvas id="risk-chart"></canvas></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>AI Recommendations</h3><span class="badge badge-purple">AI Generated</span></div>
+    <div class="panel-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);border-radius:8px;padding:14px">
+        <div style="color:var(--red);font-size:12px;font-weight:700;margin-bottom:6px">🚨 CRITICAL — Act Now</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Escalate payments API blocker</div>
+        <div style="font-size:12px;color:var(--muted)">This blocker has been open 48 hours and is blocking 4 dependent tasks. AI predicts 2-day sprint delay if unresolved today.</div>
+      </div>
+      <div style="background:rgba(210,153,34,.07);border:1px solid rgba(210,153,34,.2);border-radius:8px;padding:14px">
+        <div style="color:var(--yellow);font-size:12px;font-weight:700;margin-bottom:6px">⚠️ WARNING — This Week</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Reduce scope by 8 story points</div>
+        <div style="font-size:12px;color:var(--muted)">Based on current velocity (7.3 pts/day) and 5 days remaining, the team is projected to complete 65/73 planned points.</div>
+      </div>
+      <div style="background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:14px">
+        <div style="color:var(--accent);font-size:12px;font-weight:700;margin-bottom:6px">💡 SUGGESTION</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Schedule tech debt session next sprint</div>
+        <div style="font-size:12px;color:var(--muted)">Technical debt risk score has increased 18% over 3 sprints. Recommend allocating 20% of next sprint capacity for debt reduction.</div>
+      </div>
+      <div style="background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.2);border-radius:8px;padding:14px">
+        <div style="color:var(--green);font-size:12px;font-weight:700;margin-bottom:6px">✅ POSITIVE SIGNAL</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Team burnout risk is low</div>
+        <div style="font-size:12px;color:var(--muted)">Commit cadence, PR turnaround times, and meeting attendance patterns all indicate healthy team engagement this sprint.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CHAT ══ -->
+<div class="pane" id="pane-chat">
+  <div style="margin-bottom:16px">
+    <h2 style="font-size:18px;margin-bottom:4px">Ask AI about your Sprint</h2>
+    <div style="color:var(--muted);font-size:13px">Powered by sprint data, commit history, and team metrics</div>
+  </div>
+  <div class="panel">
+    <div class="chat-window" id="chat-window">
+      <div class="msg ai">
+        <div class="ai-label">⚡ DevPulse AI</div>
+        Hello! I'm your sprint intelligence assistant. I have full context on Sprint 14 — Team Nexus, 5 members, 73 story points planned. Ask me anything about your sprint, blockers, team velocity, or risks.
+      </div>
+    </div>
+    <div class="chips">
+      <div class="chip" onclick="askChip(this)">What's blocking us most?</div>
+      <div class="chip" onclick="askChip(this)">Will we finish on time?</div>
+      <div class="chip" onclick="askChip(this)">Who has the most load?</div>
+      <div class="chip" onclick="askChip(this)">Summarize this sprint</div>
+      <div class="chip" onclick="askChip(this)">What should we defer?</div>
+    </div>
+    <div class="chat-input-row">
+      <input id="chat-input" placeholder="Ask about blockers, velocity, team load, risks…" onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="btn" onclick="sendChat()">Send ↑</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ── Tab switching ──────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const names=['overview','standup','team','risks','chat'];
+    t.classList.toggle('active', names[i]===name);
+  });
+  document.querySelectorAll('.pane').forEach(p=>{
+    p.classList.toggle('active', p.id==='pane-'+name);
+  });
+}
+
+// ── Animate KPIs ──────────────────────────────────────────────────────────
+function animateCount(el, target, suffix='', duration=1000) {
+  let start=0, step=target/60;
+  const timer = setInterval(()=>{
+    start = Math.min(start+step, target);
+    el.textContent = Math.round(start)+suffix;
+    if(start>=target) clearInterval(timer);
+  }, duration/60);
+}
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  setTimeout(()=>{
+    animateCount(document.getElementById('kpi-completion'),68,'%');
+    animateCount(document.getElementById('kpi-velocity'),52);
+    animateCount(document.getElementById('kpi-prs'),7);
+    animateCount(document.getElementById('kpi-blockers'),3);
+    animateCount(document.getElementById('kpi-days'),5);
+    animateCount(document.getElementById('kpi-risk'),62);
+    setTimeout(()=>{ document.getElementById('sprint-bar').style.width='68%'; }, 300);
+  }, 200);
+  buildCharts();
+  buildTeam();
+});
+
+// ── Charts ────────────────────────────────────────────────────────────────
+function buildCharts() {
+  const CHART_OPTS = {
+    responsive:true, maintainAspectRatio:false, animation:{duration:800},
+    plugins:{legend:{labels:{color:'#8b949e',boxWidth:12,font:{size:11}}}},
+    scales:{
+      x:{ticks:{color:'#8b949e',font:{size:10}},grid:{color:'#21262d'}},
+      y:{ticks:{color:'#8b949e',font:{size:10}},grid:{color:'#21262d'}},
+    }
+  };
+  const days = ['D1','D2','D3','D4','D5','D6','D7','D8','D9','D10','D11','D12','D13','D14'];
+  const ideal = [100,93,86,79,72,64,57,50,43,36,29,21,14,7,0];
+  const actual = [100,96,89,82,74,68,61,56,48,null,null,null,null,null,null];
+  const projected= [null,null,null,null,null,null,null,null,48,42,35,28,20,12,0];
+
+  new Chart(document.getElementById('burndown-chart').getContext('2d'),{
+    type:'line', data:{
+      labels:['D0',...days],
+      datasets:[
+        {label:'Ideal',data:ideal,borderColor:'#30363d',borderDash:[4,4],pointRadius:0,borderWidth:1.5},
+        {label:'Actual',data:actual,borderColor:'#58a6ff',backgroundColor:'rgba(88,166,255,.1)',fill:true,pointRadius:3,borderWidth:2,tension:.4},
+        {label:'Projected',data:projected,borderColor:'#bc8cff',borderDash:[3,3],pointRadius:0,borderWidth:1.5,tension:.4},
+      ]
+    }, options:{...CHART_OPTS}
+  });
+
+  new Chart(document.getElementById('velocity-chart').getContext('2d'),{
+    type:'bar', data:{
+      labels:['S9','S10','S11','S12','S13','S14 (cur)'],
+      datasets:[{label:'Story Points',data:[44,51,47,58,63,52],
+        backgroundColor:['#21262d','#21262d','#21262d','#21262d','#21262d','#58a6ff'],
+        borderRadius:4}]
+    }, options:{...CHART_OPTS,plugins:{legend:{display:false}}}
+  });
+
+  new Chart(document.getElementById('contrib-chart').getContext('2d'),{
+    type:'doughnut', data:{
+      labels:['Priya','Arjun','Rahul','Vikram','Neha'],
+      datasets:[{data:[23,17,12,15,10],backgroundColor:['#3fb950','#f85149','#58a6ff','#d29922','#bc8cff'],borderWidth:0,hoverOffset:4}]
+    }, options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#8b949e',boxWidth:10,font:{size:11}}}}}
+  });
+
+  new Chart(document.getElementById('workload-chart').getContext('2d'),{
+    type:'bar', data:{
+      labels:['Priya','Arjun','Rahul','Vikram','Neha'],
+      datasets:[
+        {label:'Completed',data:[23,10,8,12,7],backgroundColor:'#3fb950',borderRadius:4},
+        {label:'In Progress',data:[0,7,4,3,3],backgroundColor:'#d29922',borderRadius:4},
+      ]
+    }, options:{...CHART_OPTS,indexAxis:'y',scales:{x:{...CHART_OPTS.scales.x,stacked:true},y:{...CHART_OPTS.scales.y,stacked:true}}}
+  });
+
+  new Chart(document.getElementById('risk-chart').getContext('2d'),{
+    type:'line', data:{
+      labels:['S9','S10','S11','S12','S13','S14'],
+      datasets:[{label:'Risk Score',data:[45,52,44,58,55,62],borderColor:'#f0883e',backgroundColor:'rgba(240,136,62,.1)',fill:true,tension:.4,pointRadius:4,borderWidth:2}]
+    }, options:{...CHART_OPTS,plugins:{legend:{display:false}},scales:{...CHART_OPTS.scales,y:{...CHART_OPTS.scales.y,min:0,max:100}}}
+  });
+}
+
+// ── Team ──────────────────────────────────────────────────────────────────
+const TEAM = [
+  {name:'Priya Sharma',role:'Frontend Lead',pts:23,prs:8,commits:34,color:'#3fb950',emoji:'👩‍💻'},
+  {name:'Arjun Mehta',role:'Backend Engineer',pts:17,prs:5,commits:21,color:'#f85149',emoji:'👨‍💻'},
+  {name:'Rahul Singh',role:'Full Stack',pts:12,prs:4,commits:18,color:'#58a6ff',emoji:'🧑‍💻'},
+  {name:'Vikram Das',role:'DevOps Engineer',pts:15,prs:6,commits:27,color:'#d29922',emoji:'👨‍🔧'},
+  {name:'Neha Gupta',role:'QA Engineer',pts:10,prs:3,commits:15,color:'#bc8cff',emoji:'👩‍🔬'},
+];
+
+function buildTeam() {
+  const list = document.getElementById('team-list');
+  list.innerHTML = TEAM.map(m=>`
+    <div class="member-row">
+      <div class="avatar" style="background:${m.color}22;color:${m.color}">${m.emoji}</div>
+      <div class="member-info">
+        <div class="member-name">${m.name}</div>
+        <div class="member-role">${m.role}</div>
+      </div>
+      <div class="member-stats">
+        <span><span class="ms-val">${m.pts}</span> pts</span>
+        <span><span class="ms-val">${m.prs}</span> PRs</span>
+        <span><span class="ms-val">${m.commits}</span> commits</span>
+      </div>
+    </div>`).join('');
+}
+
+// ── Standup generator ─────────────────────────────────────────────────────
+const STANDUPS = {
+  'Priya Sharma': {
+    yesterday: 'Completed the user authentication module refactor (PR #247, merged). Fixed 3 failing unit tests in the payment flow. Reviewed and approved 2 PRs from Rahul.',
+    today: 'Working on the dashboard performance optimization — reducing initial load from 4.2s to under 2s. Starting the mobile responsive audit for the settings page.',
+    blockers: 'None — clear runway today.'
+  },
+  'Arjun Mehta': {
+    yesterday: 'Attempted to integrate the payments API rate-limit workaround — hit a wall with auth scopes. Opened ticket INFRA-421 with DevOps.',
+    today: 'Pairing with Vikram on the auth scope issue for payments API. Will push the retry queue implementation in parallel.',
+    blockers: '🔴 Blocked: Payments API rate limit + missing DevOps approval for staging creds. ETA unknown — need escalation.'
+  },
+  'Rahul Singh': {
+    yesterday: 'Shipped the notification service MVP (3 PR reviews pending). Wrote integration tests for the email queue.',
+    today: 'Fixing the 2 review comments on PR #251. Starting the webhook handler for Slack alerts.',
+    blockers: 'Design review pending — UX team has not responded in 3 hours. May delay PR #249 merge.'
+  },
+  'Vikram Das': {
+    yesterday: 'Deployed staging environment v2.3.1. Set up GitHub Actions cache — build time dropped from 8min to 3.5min.',
+    today: 'Helping Arjun unblock the payments API auth scope. Monitoring staging deploy health post-migration.',
+    blockers: 'Awaiting DB migration approval from platform team — needed for staging env stability.'
+  },
+  'Neha Gupta': {
+    yesterday: 'Completed regression suite for sprint 14 features. Found 2 medium-severity bugs in the search flow — filed NEX-891 and NEX-892.',
+    today: 'Running the full E2E suite on staging. Will triage the 2 new bugs with Priya.',
+    blockers: 'Need staging to be stable — blocked by Vikram\'s DB migration pending.'
+  }
+};
+
+function generateStandup() {
+  const btn = document.getElementById('gen-btn');
+  btn.classList.add('generating');
+  btn.innerHTML = '<span class="pulse-dot"></span> Generating…';
+  switchTab('standup');
+
+  const out = document.getElementById('standup-output');
+  out.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)"><div class="typing" style="justify-content:center"><span></span><span></span><span></span></div><div style="margin-top:10px;font-size:13px">Analyzing commits, PRs, and blocked tickets…</div></div>';
+
+  setTimeout(()=>{
+    let html = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px;padding:16px 20px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">📅 Daily Standup · Team Nexus · Sprint 14 · July 1, 2026</div>
+      <div style="font-size:13px">AI-generated from <strong>34 commits</strong>, <strong>8 open PRs</strong>, <strong>3 blockers</strong>, and <strong>15 Jira tickets</strong></div>
+    </div>`;
+
+    Object.entries(STANDUPS).forEach(([name, data])=>{
+      const member = TEAM.find(m=>m.name===name);
+      html += `<div class="standup-member">
+        <div class="avatar" style="background:${member.color}22;color:${member.color}">${member.emoji}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;margin-bottom:10px">${name} <span style="font-size:12px;color:var(--muted);font-weight:400">· ${member.role}</span></div>
+          <div class="standup-section">
+            <h4>✅ Yesterday</h4>
+            <div class="standup-block green">${data.yesterday}</div>
+          </div>
+          <div class="standup-section">
+            <h4>🎯 Today</h4>
+            <div class="standup-block">${data.today}</div>
+          </div>
+          <div class="standup-section" style="margin-bottom:0">
+            <h4>🚧 Blockers</h4>
+            <div class="standup-block ${data.blockers.startsWith('🔴')?'red':data.blockers.startsWith('None')?'green':'yellow'}">${data.blockers}</div>
+          </div>
+        </div>
+      </div>`;
+    });
+
+    html += `<div style="background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:16px 18px;margin-top:16px">
+      <div style="font-size:12px;color:var(--accent);font-weight:700;margin-bottom:8px">⚡ AI SPRINT SUMMARY</div>
+      <div style="font-size:13px;line-height:1.7">Sprint 14 is at <strong>68% completion</strong> with 5 days remaining. The team is tracking slightly below ideal burndown due to the payments API blocker (now 48 hours old). <strong>Recommended action:</strong> Escalate INFRA-421 to engineering leadership today to avoid a 2-day delay. Priya is the sprint MVP — 23 points completed with no blockers.</div>
+    </div>`;
+
+    out.innerHTML = html;
+    btn.classList.remove('generating');
+    btn.innerHTML = '⚡ Regenerate';
+  }, 2200);
+}
+
+function copyStandup() {
+  const text = document.getElementById('standup-output').innerText;
+  navigator.clipboard.writeText(text).then(()=>{
+    const btn = event.target;
+    btn.textContent = '✓ Copied!';
+    setTimeout(()=>btn.textContent='📋 Copy', 2000);
+  });
+}
+
+// ── Chat AI ───────────────────────────────────────────────────────────────
+const AI_RESPONSES = {
+  'blocking': 'The biggest blocker right now is the **payments API rate limit** reported by Arjun — it\'s been open for 48 hours and is blocking 4 dependent tasks. AI risk score: if unresolved today, Sprint 14 delivery slips by 2 days. Recommend escalating INFRA-421 to platform engineering immediately.',
+  'finish': 'Based on current velocity (7.3 story points/day) and 5 days remaining, the team will complete approximately **65 of 73 planned points** — a 89% completion rate. To reach 100%, you\'d need to either resolve the payments blocker today or defer the 2 lowest-priority tickets (NEX-884, NEX-887).',
+  'load': 'Priya Sharma carries the highest load at **23 story points** with 34 commits this sprint. Arjun is effectively blocked, making his real throughput much lower than assigned. Vikram\'s actual load is higher than metrics show — he\'s been context-switching to unblock Arjun. Neha has capacity to take 2 more tickets.',
+  'summarize': '**Sprint 14 Summary (Day 9 of 14):**\n• 68% complete (52/73 story points done)\n• 3 active blockers — 2 critical\n• Priya is top contributor (23 pts)\n• Velocity: 7.3 pts/day (avg last 3 sprints: 6.8)\n• AI Risk Score: 62/100 (Medium)\n• Main concern: payments API blocker impacting 4 tasks',
+  'defer': 'AI recommends deferring these tickets to Sprint 15:\n1. **NEX-884** — Dark mode enhancement (4 pts, low priority, no dependencies)\n2. **NEX-887** — Analytics export CSV (3 pts, nice-to-have, stakeholder-approved deferral)\nDeferring these 7 points puts the team on track for 100% completion of remaining committed work.',
+  'default': 'Based on Sprint 14 data: the team has 52 story points done across 5 members, with 3 open blockers. The critical path right now is resolving the payments API rate limit issue. Velocity is trending up (+12% vs last sprint) despite the blockers. Is there a specific area you\'d like to dig into?'
+};
+
+function getAIResponse(q) {
+  q = q.toLowerCase();
+  if (q.includes('block')) return AI_RESPONSES['blocking'];
+  if (q.includes('finish') || q.includes('time') || q.includes('complete') || q.includes('deliver')) return AI_RESPONSES['finish'];
+  if (q.includes('load') || q.includes('who') || q.includes('most')) return AI_RESPONSES['load'];
+  if (q.includes('summar') || q.includes('overview') || q.includes('sprint')) return AI_RESPONSES['summarize'];
+  if (q.includes('defer') || q.includes('cut') || q.includes('scope') || q.includes('drop')) return AI_RESPONSES['defer'];
+  return AI_RESPONSES['default'];
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const q = input.value.trim();
+  if (!q) return;
+  input.value = '';
+  addMsg(q, 'user');
+  const typing = addMsg('<div class="typing"><span></span><span></span><span></span></div>', 'ai');
+  setTimeout(()=>{
+    typing.remove();
+    addMsg('<div class="ai-label">⚡ DevPulse AI</div>' + getAIResponse(q).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>'), 'ai');
+  }, 1200);
+}
+
+function askChip(el) {
+  document.getElementById('chat-input').value = el.textContent;
+  sendChat();
+}
+
+function addMsg(html, type) {
+  const win = document.getElementById('chat-window');
+  const div = document.createElement('div');
+  div.className = 'msg ' + type;
+  div.innerHTML = html;
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+  return div;
+}
+</script>
+</body>
+</html>
